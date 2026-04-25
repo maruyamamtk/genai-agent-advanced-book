@@ -1,0 +1,39 @@
+classDiagram
+    class AgentResult {
+        question: str
+        plan: Plan
+        subtasks: list[Subtask]
+        answer: str
+    }
+    class Plan {
+        subtasks: list[str]
+    }
+    class Subtask {
+        task_name: str
+        tool_results: list[list[ToolResult]]
+        reflection_results: list[ReflectionResult]
+        is_completed: bool
+        subtask_answer: str
+        challenge_count: int
+    }
+    class ToolResult {
+        tool_name: str
+        args: str
+        results: list[SearchOutput]
+    }
+    class ReflectionResult {
+        advice: str
+        is_completed: bool
+    }
+    class SearchOutput {
+        file_name: str
+        content: str
+        from_hit(hit) SearchOutput
+        from_point(point) SearchOutput
+    }
+
+    AgentResult "1" --> "1" Plan
+    AgentResult "1" --> "N" Subtask
+    Subtask "1" --> "N" ToolResult
+    Subtask "1" --> "N" ReflectionResult
+    ToolResult "1" --> "N" SearchOutput
