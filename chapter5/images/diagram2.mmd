@@ -1,0 +1,28 @@
+flowchart TD
+    START([START]) --> generate_plan
+
+    generate_plan["generate_plan\n─────────────────\nIN: user_goal, data_file\n↓ describe_dataframe()\n↓ generate_plan() → Plan\nOUT: data_info, sub_tasks"]
+
+    generate_plan --> approve_plan
+
+    approve_plan{"approve_plan\n─────────────────\nHuman-in-the-Loop\ninterrupt(sub_tasks)\nユーザー承認待ち"}
+
+    approve_plan -- "y（承認）" --> open_programmer
+    approve_plan -- "n（却下）" --> generate_plan
+
+    open_programmer["open_programmer\n─────────────────\nIN: sub_tasks\n未完了タスクを選択\nE2B Sandbox 起動\nOUT: user_request, sandbox_id"]
+
+    open_programmer -- "未完了タスクあり" --> programmer_sub
+
+    subgraph programmer_sub["Programmer サブグラフ（詳細は図3）"]
+        direction TB
+        P1["set_dataframe → generate_code\n→ execute_code → generate_review\n→ close_programmer"]
+    end
+
+    programmer_sub --> open_programmer
+
+    open_programmer -- "全タスク完了" --> generate_report
+
+    generate_report["generate_report\n─────────────────\nIN: data_info, sub_task_threads\n↓ generate_report()\nOUT: report"]
+
+    generate_report --> END_NODE([END])

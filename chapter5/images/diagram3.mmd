@@ -1,0 +1,23 @@
+flowchart TD
+    START([START]) --> set_dataframe
+
+    set_dataframe["set_dataframe\n─────────────────\nIN: data_file, sandbox_id\n↓ describe_dataframe()\n↓ Sandbox にCSVをアップロード\nOUT: data_info"]
+
+    set_dataframe --> generate_code
+
+    generate_code["generate_code\n─────────────────\nIN: data_info, user_request\n↓ 過去スレッドの observation を追記\n↓ generate_code() → Program\nOUT: data_threads (code 追加)"]
+
+    generate_code --> execute_code
+
+    execute_code["execute_code\n─────────────────\nIN: data_threads, sandbox_id\n↓ Sandbox.connect()\n↓ execute_code()\nOUT: data_threads\n(stdout / stderr / results 更新)"]
+
+    execute_code --> generate_review
+
+    generate_review{"generate_review\n─────────────────\nIN: data_threads, data_info\n↓ generate_review() → Review\nOUT: observation, is_completed"}
+
+    generate_review -- "is_completed = False\n（要修正）" --> generate_code
+    generate_review -- "is_completed = True\n（タスク完了）" --> close_programmer
+
+    close_programmer["close_programmer\n─────────────────\nIN: sandbox_id, data_threads\n↓ Sandbox.kill()\n↓ sub_task_threads に追加\n↓ sub_tasks を更新\nOUT: 親グラフの open_programmer へ"]
+
+    close_programmer --> END_NODE([open_programmer\n親グラフへ戻る])

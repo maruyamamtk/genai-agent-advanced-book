@@ -1,0 +1,79 @@
+graph LR
+    subgraph src["src/"]
+        subgraph graph["graph/"]
+            da["data_analysis.py\nbuild_data_analysis_graph()"]
+            pg["programmer.py\nbuild_programmer_graph()"]
+
+            subgraph nodes["nodes/"]
+                gplan["generate_plan.py"]
+                aplan["approve_plan.py"]
+                oprog["open_programmer\n(data_analysis.py内)"]
+                sdf["set_dataframe.py"]
+                gcode["generate_code.py"]
+                ecode["execute_code.py"]
+                grev["generate_review.py"]
+                grep["generate_report.py"]
+                cprog["close_programmer\n(data_analysis.py内)"]
+            end
+
+            subgraph gmodels["models/"]
+                das["data_analysis_state.py\nDataAnalysisState"]
+                pms["programmer_state.py\nProgrammerState / DataThread"]
+            end
+        end
+
+        subgraph modules["modules/"]
+            ddesc["describe_dataframe.py"]
+            mplan["generate_plan.py"]
+            mcode["generate_code.py"]
+            mexec["execute_code.py"]
+            mrev["generate_review.py"]
+            mrep["generate_report.py"]
+            mset["set_dataframe.py"]
+        end
+
+        subgraph models["models/"]
+            plan["plan.py\nPlan / Task / SubTask"]
+            program["program.py\nProgram"]
+            review["review.py\nReview"]
+            dthread["data_thread.py\nDataThread"]
+        end
+
+        subgraph llms["llms/"]
+            oai["apis/openai.py\ngenerate_response()"]
+            llmr["models/llm_response.py\nLLMResponse"]
+            tmpl["utils/load_template.py"]
+        end
+
+        subgraph prompts["prompts/"]
+            j1["describe_dataframe.jinja"]
+            j2["generate_plan.jinja"]
+            j3["generate_code.jinja"]
+            j4["generate_review.jinja"]
+            j5["generate_report.jinja"]
+        end
+    end
+
+    da --> pg
+    da --> gplan & aplan & oprog & grep & cprog
+    pg --> sdf & gcode & ecode & grev
+
+    gplan --> das & mplan
+    aplan --> das
+    oprog --> das & pms
+    sdf --> pms & mset & ddesc
+    gcode --> pms & mcode & ddesc
+    ecode --> pms & mexec
+    grev --> pms & mrev
+    grep --> das & mrep
+    cprog --> pms
+
+    mplan & mcode & mrev & mrep --> oai
+    oai --> llmr
+    oai --> tmpl
+    tmpl --> prompts
+
+    mplan --> plan
+    mcode --> program
+    mrev --> review
+    mexec --> dthread
