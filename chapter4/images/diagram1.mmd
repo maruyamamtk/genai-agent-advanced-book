@@ -1,0 +1,34 @@
+graph LR
+    subgraph src["src/"]
+        agent["agent.py\nHelpDeskAgent クラス\nLangGraph グラフ定義"]
+        configs["configs.py\nSettings クラス\n(APIキー・モデル設定)"]
+        models["models.py\nPydantic データモデル群"]
+        prompts["prompts.py\nプロンプトテンプレート\nHelpDeskAgentPrompts"]
+        logger["custom_logger.py\nsetup_logger()"]
+
+        subgraph tools["tools/"]
+            manual["search_xyz_manual.py\nESキーワード検索ツール"]
+            qa["search_xyz_qa.py\nQdrantベクトル検索ツール"]
+        end
+
+        subgraph scripts["scripts/"]
+            create["create_index.py\nインデックス作成"]
+            delete["delete_index.py\nインデックス削除"]
+        end
+    end
+
+    agent --> configs
+    agent --> models
+    agent --> prompts
+    agent --> logger
+    agent --> manual
+    agent --> qa
+
+    manual --> models
+    manual --> logger
+
+    qa --> configs
+    qa --> models
+    qa --> logger
+
+    create --> configs

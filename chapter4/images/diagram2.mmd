@@ -1,0 +1,48 @@
+flowchart TD
+    User(["ユーザー"])
+    -->|"question: str"| run_agent
+
+    subgraph HelpDeskAgent["HelpDeskAgent (agent.py)"]
+        run_agent["run_agent(question)\n→ AgentResult"]
+
+        subgraph MainGraph["メイングラフ (LangGraph)"]
+            create_plan["create_plan(AgentState)\n質問からサブタスク計画を生成\n→ plan: list[str]"]
+            execute_subtasks["execute_subtasks() × N\nSend で並列実行"]
+            create_answer["create_answer(AgentState)\n全サブタスク結果を統合\n→ last_answer: str"]
+        end
+
+        subgraph SubGraph["サブグラフ (サブタスク毎)"]
+            select_tools["select_tools(AgentSubGraphState)\nOpenAI でツールを選択\n→ messages (tool_calls含む)"]
+            execute_tools["execute_tools(AgentSubGraphState)\n選択されたツールを実行\n→ messages, tool_results"]
+            create_sub["create_subtask_answer(AgentSubGraphState)\nツール結果から回答を生成\n→ subtask_answer: str"]
+            reflect["reflect_subtask(AgentSubGraphState)\n回答品質を評価\n→ is_completed, advice"]
+        end
+    end
+
+    run_agent --> create_plan
+    create_plan -->|"plan: list[str]"| execute_subtasks
+    execute_subtasks --> select_tools
+    select_tools -->|"tool_calls"| execute_tools
+    execute_tools -->|"messages + tool_results"| create_sub
+    create_sub -->|"subtask_answer"| reflect
+    reflect -->|"is_completed=false\n(最大3回リトライ)"| select_tools
+    reflect -->|"is_completed=true"| done(("完了"))
+    done -->|"Subtask オブジェクト"| execute_subtasks
+    execute_subtasks -->|"subtask_results: list[Subtask]"| create_answer
+    create_answer -->|"last_answer"| run_agent
+    run_agent -->|"AgentResult"| Result(["最終回答"])
+
+    execute_tools -->|"keywords: str"| search_manual
+    execute_tools -->|"query: str"| search_qa
+
+    subgraph tools["tools/"]
+        search_manual["search_xyz_manual(keywords)\nESキーワード全文検索\n→ list[SearchOutput]"]
+        search_qa["search_xyz_qa(query)\nベクトル類似度検索\n→ list[SearchOutput]"]
+    end
+
+    search_manual -->|"list[SearchOutput]"| execute_tools
+    search_qa -->|"list[SearchOutput]"| execute_tools
+
+    search_manual <-->|"全文検索クエリ"| ES[(Elasticsearch\ndocuments)]
+    search_qa <-->|"ベクトル検索クエリ"| Qdrant[(Qdrant\ndocuments)]
+    search_qa -->|"埋め込みベクトル生成"| EmbAPI([OpenAI\nEmbeddings API])
