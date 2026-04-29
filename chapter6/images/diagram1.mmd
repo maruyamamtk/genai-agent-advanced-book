@@ -1,0 +1,56 @@
+graph LR
+    subgraph arxiv_researcher["arxiv_researcher/"]
+        subgraph agent["agent/"]
+            ra["research_agent.py\nResearchAgent"]
+            psa["paper_search_agent.py\nPaperSearchAgent"]
+            paa["paper_analyzer_agent.py\nPaperAnalyzerAgent"]
+        end
+
+        subgraph chains["chains/"]
+            hc["hearing_chain.py\nHearingChain"]
+            go["goal_optimizer_chain.py\nGoalOptimizer"]
+            qd["query_decomposer_chain.py\nQueryDecomposer"]
+            pp["paper_processor_chain.py\nPaperProcessor"]
+            rc["reading_chains.py\nSetSection / CheckSufficiency\n/ Summarizer"]
+            rep["reporter_chain.py\nReporter"]
+            te["task_evaluator_chain.py\nTaskEvaluator"]
+        end
+
+        subgraph searcher["searcher/"]
+            as_["arxiv_searcher.py\nArxivSearcher"]
+        end
+
+        subgraph service["service/"]
+            ptm["pdf_to_markdown.py\nPdfToMarkdown"]
+            ms["markdown_storage.py\nMarkdownStorage"]
+            mp["markdown_parser.py\nMarkdownParser"]
+        end
+
+        subgraph models["models/"]
+            am["arxiv.py\nArxivPaper"]
+            rm["reading.py\nReadingResult"]
+            mm["markdown.py\nMarkdownDocument"]
+        end
+
+        st["settings.py"]
+    end
+
+    ra --> hc & go & qd & te & rep
+    ra --> psa
+
+    psa --> pp & paa
+
+    paa --> rc
+
+    pp --> as_
+    as_ --> am
+
+    pp --> ptm & ms
+    rc --> ms & mp
+
+    ptm --> rm
+    ms --> rm
+    mp --> rm
+
+    hc & go & qd & te & rep --> st
+    as_ --> st

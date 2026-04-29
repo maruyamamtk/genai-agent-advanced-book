@@ -4,7 +4,7 @@ from typing import Literal
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 from langgraph.types import Command
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from arxiv_researcher.chains.task_evaluator_chain import TaskEvaluation
 from arxiv_researcher.chains.utils import load_prompt
@@ -14,10 +14,13 @@ from arxiv_researcher.settings import settings
 class DecomposedTasks(BaseModel):
     tasks: list[str] = Field(
         default_factory=list,
-        min_length=settings.query_decomposer.min_decomposed_tasks,
-        max_length=settings.query_decomposer.max_decomposed_tasks,
         description="分解されたタスクのリスト",
     )
+
+    @field_validator("tasks", mode="before")
+    @classmethod
+    def clamp_tasks(cls, v: list) -> list:
+        return v[: settings.query_decomposer.max_decomposed_tasks]
 
 
 class QueryDecomposer:

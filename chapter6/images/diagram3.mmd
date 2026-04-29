@@ -1,0 +1,37 @@
+flowchart TD
+    START([START]) --> search_papers
+
+    subgraph PaperSearchAgent["PaperSearchAgent サブグラフ"]
+        search_papers["search_papers\n─────────────────\nIN: goal, tasks\n↓ ArxivSearcher でタスクごとに論文検索\n↓ Cohereでリランキング\n↓ PDFをMarkdownに変換\nOUT: reading_results（論文リスト）"]
+
+        search_papers -- "各論文に Send（並列）" --> analyze_paper
+
+        subgraph PaperAnalyzerAgent["PaperAnalyzerAgent サブグラフ（論文ごとに並列実行）"]
+            set_section["set_section\n─────────────────\nIN: goal, reading_result\n↓ SetSection\n↓ 論文のセクション概要を確認\n↓ 読むセクションインデックスを選択\nOUT: selected_section_indices"]
+
+            set_section --> check_sufficiency
+
+            check_sufficiency{"check_sufficiency\n─────────────────\nIN: selected_section_indices\n↓ CheckSufficiency\n↓ 選択セクションの情報充足性を判定\nOUT: sufficiency, check_count"}
+
+            check_sufficiency -- "is_sufficient = True\n（情報十分）" --> summarize
+            check_sufficiency -- "is_sufficient = False\n& check_count < 上限\n（再選択）" --> set_section
+            check_sufficiency -- "is_sufficient = False\n& check_count >= 上限\n（関連なし）" --> mark_as_not_related
+
+            summarize["summarize\n─────────────────\nIN: reading_result, goal\n↓ Summarizer\n↓ 選択セクションをサマリー\nOUT: reading_result\n(answer追加, is_related=True)"]
+
+            mark_as_not_related["mark_as_not_related\n─────────────────\nIN: reading_result\n↓ is_related = False に設定\nOUT: reading_result\n(is_related=False)"]
+        end
+
+        analyze_paper["analyze_paper\n────────────\n各論文をPaperAnalyzerAgentで分析\nOUT: processing_reading_results"]
+
+        summarize --> analyze_paper_end(["PaperAnalyzerAgent END"])
+        mark_as_not_related --> analyze_paper_end
+
+        analyze_paper --> analyze_paper_end
+
+        analyze_paper_end --> organize_results
+
+        organize_results["organize_results\n─────────────────\nIN: processing_reading_results\n↓ is_related = True の論文のみフィルタ\nOUT: reading_results（関連論文のみ）"]
+    end
+
+    organize_results --> END_NODE([END\n親グラフの evaluate_task へ])

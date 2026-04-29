@@ -51,7 +51,7 @@ class ModelSettings(BaseModel):
     # 複雑なタスク用のOpenAIモデル
     openai_smart_model: str = "gpt-4o"
     # レポート生成用のAnthropicモデル
-    anthropic_model: str = "claude-3-7-sonnet-20250219"
+    anthropic_model: str = "claude-sonnet-4-6"
     # 埋め込み用のOpenAIモデル
     openai_embedding_model: str = "text-embedding-3-small"
     # リランキング用のCohereモデル

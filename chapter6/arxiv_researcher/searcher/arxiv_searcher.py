@@ -166,17 +166,21 @@ class ArxivSearcher(Searcher):
         return chain.invoke({"query": query})  # type: ignore
 
     def _date_selector(self, query: str) -> ArxivTimeRange:
-        prompt = ChatPromptTemplate.from_template(DATE_SELECTOR_PROMPT)
-        chain = prompt | self.llm.with_structured_output(
-            ArxivTimeRange,
-            method="function_calling",
-        )
-        return chain.invoke(
-            {
-                "current_date": self.current_date,
-                "query": query,
-            }
-        )  # type: ignore
+        try:
+            prompt = ChatPromptTemplate.from_template(DATE_SELECTOR_PROMPT)
+            chain = prompt | self.llm.with_structured_output(
+                ArxivTimeRange,
+                method="function_calling",
+            )
+            return chain.invoke(
+                {
+                    "current_date": self.current_date,
+                    "query": query,
+                }
+            )  # type: ignore
+        except Exception:
+            # LLMが不正な日付フォーマットを返した場合は日付フィルターなしで続行
+            return ArxivTimeRange()
 
     def _expand_query(self, goal_setting: str, query: str, feedback: str = "") -> str:
         prompt = ChatPromptTemplate.from_template(EXPAND_QUERY_PROMPT)
@@ -228,8 +232,8 @@ class ArxivSearcher(Searcher):
                         "",
                     ),
                     abstract=entry.summary.replace("\n", " "),
-                    published=datetime.datetime(*entry.published_parsed[:6]),
-                    updated=datetime.datetime(*entry.updated_parsed[:6]),
+                    published=datetime.datetime(*entry.published_parsed[:6]) if getattr(entry, "published_parsed", None) else None,
+                    updated=datetime.datetime(*entry.updated_parsed[:6]) if getattr(entry, "updated_parsed", None) else None,
                     version=int(entry.id.split("/")[-1].split("v")[-1]),
                     authors=[
                         author.get("name", "") for author in entry.get("authors", [])
@@ -237,6 +241,7 @@ class ArxivSearcher(Searcher):
                     categories=[tag.get("term", "") for tag in entry.get("tags", [])],
                 )
                 for entry in entries
+                if "/abs/" in entry.id  # arXivエラーエントリを除外
             ]
 
             if self.debug:
@@ -258,26 +263,31 @@ class ArxivSearcher(Searcher):
                     break  # 最大リトライ回数に達したのでループを抜ける
 
         if papers:
-            reranked = self.cohere_client.rerank(
-                model=settings.model.cohere_rerank_model,
-                query=f"{goal_setting}\n{query}",
-                documents=[f"{paper.title}\n{paper.abstract}" for paper in papers],
-                top_n=min(self.max_papers, len(papers)),
-            )
+            try:
+                reranked = self.cohere_client.rerank(
+                    model=settings.model.cohere_rerank_model,
+                    query=f"{goal_setting}\n{query}",
+                    documents=[f"{paper.title}\n{paper.abstract}" for paper in papers],
+                    top_n=min(self.max_papers, len(papers)),
+                )
 
-            reranked_papers = []
-            for result in reranked.results:
-                paper = papers[result.index]
-                paper.relevance_score = result.relevance_score
-                reranked_papers.append(paper)
+                reranked_papers = []
+                for result in reranked.results:
+                    paper = papers[result.index]
+                    paper.relevance_score = result.relevance_score
+                    reranked_papers.append(paper)
 
-            # 関連度がしきい値以上の結果のみを返す
-            papers = [
-                paper
-                for paper in reranked_papers
-                if paper.relevance_score is not None
-                and paper.relevance_score >= self.RELEVANCE_SCORE_THRESHOLD
-            ]
+                # 関連度がしきい値以上の結果のみを返す
+                papers = [
+                    paper
+                    for paper in reranked_papers
+                    if paper.relevance_score is not None
+                    and paper.relevance_score >= self.RELEVANCE_SCORE_THRESHOLD
+                ]
+            except Exception as e:
+                # レート制限などでリランキングが失敗した場合は元の順序で上位件数を返す
+                logger.warning(f"Reranking failed ({e}). Falling back to original order.")
+                papers = papers[: self.max_papers]
 
         return papers
 
