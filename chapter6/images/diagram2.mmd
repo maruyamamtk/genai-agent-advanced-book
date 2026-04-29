@@ -1,0 +1,36 @@
+flowchart TD
+    START([START]) --> user_hearing
+
+    user_hearing["user_hearing\n─────────────────\nIN: messages\n↓ HearingChain\n↓ ヒアリング要否を判定\nOUT: hearing, messages"]
+
+    user_hearing -- "追加質問あり" --> human_feedback
+    user_hearing -- "追加質問なし" --> goal_setting
+
+    human_feedback{"human_feedback\n─────────────────\nHuman-in-the-Loop\ninterrupt(last_message)\nユーザー回答待ち"}
+
+    human_feedback -- "ユーザー回答" --> user_hearing
+
+    goal_setting["goal_setting\n─────────────────\nIN: messages\n↓ GoalOptimizer\n↓ 会話履歴から調査ゴールを生成\nOUT: goal"]
+
+    goal_setting --> decompose_query
+
+    decompose_query["decompose_query\n─────────────────\nIN: goal, evaluation\n↓ QueryDecomposer\n↓ ゴールをタスクに分解\nOUT: tasks"]
+
+    decompose_query --> paper_search_agent
+
+    subgraph paper_search_sub["PaperSearchAgent サブグラフ（詳細は図3）"]
+        direction TB
+        P1["search_papers → analyze_paper（並列）\n→ organize_results"]
+    end
+
+    decompose_query --> paper_search_sub
+    paper_search_sub --> evaluate_task
+
+    evaluate_task{"evaluate_task\n─────────────────\nIN: reading_results, goal\n↓ TaskEvaluator\n↓ 収集情報の充足性を評価\nOUT: evaluation, retry_count"}
+
+    evaluate_task -- "need_more_information = True\n（追加調査が必要）" --> decompose_query
+    evaluate_task -- "need_more_information = False\n（情報十分）" --> generate_report
+
+    generate_report["generate_report\n─────────────────\nIN: reading_results, goal\n↓ Reporter\n↓ 調査結果をレポートに統合\nOUT: final_output"]
+
+    generate_report --> END_NODE([END])
