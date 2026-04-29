@@ -228,8 +228,8 @@ class ArxivSearcher(Searcher):
                         "",
                     ),
                     abstract=entry.summary.replace("\n", " "),
-                    published=datetime.datetime(*entry.published_parsed[:6]),
-                    updated=datetime.datetime(*entry.updated_parsed[:6]),
+                    published=datetime.datetime(*entry.published_parsed[:6]) if getattr(entry, "published_parsed", None) else None,
+                    updated=datetime.datetime(*entry.updated_parsed[:6]) if getattr(entry, "updated_parsed", None) else None,
                     version=int(entry.id.split("/")[-1].split("v")[-1]),
                     authors=[
                         author.get("name", "") for author in entry.get("authors", [])
