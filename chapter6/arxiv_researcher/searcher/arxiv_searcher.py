@@ -166,17 +166,21 @@ class ArxivSearcher(Searcher):
         return chain.invoke({"query": query})  # type: ignore
 
     def _date_selector(self, query: str) -> ArxivTimeRange:
-        prompt = ChatPromptTemplate.from_template(DATE_SELECTOR_PROMPT)
-        chain = prompt | self.llm.with_structured_output(
-            ArxivTimeRange,
-            method="function_calling",
-        )
-        return chain.invoke(
-            {
-                "current_date": self.current_date,
-                "query": query,
-            }
-        )  # type: ignore
+        try:
+            prompt = ChatPromptTemplate.from_template(DATE_SELECTOR_PROMPT)
+            chain = prompt | self.llm.with_structured_output(
+                ArxivTimeRange,
+                method="function_calling",
+            )
+            return chain.invoke(
+                {
+                    "current_date": self.current_date,
+                    "query": query,
+                }
+            )  # type: ignore
+        except Exception:
+            # LLMが不正な日付フォーマットを返した場合は日付フィルターなしで続行
+            return ArxivTimeRange()
 
     def _expand_query(self, goal_setting: str, query: str, feedback: str = "") -> str:
         prompt = ChatPromptTemplate.from_template(EXPAND_QUERY_PROMPT)
