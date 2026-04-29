@@ -136,6 +136,14 @@ $ uv run langgraph dev --no-reload
 
 LangGraph Studioが起動したら、ブラウザより `http://localhost:8123` にアクセスします（自動的に開きます）。ブラウザ上のUIからリサーチゴールを入力し、エージェントを実行すると、エージェントの逐次的な動きをブラウザ上で確認することができます。
 
+**結果の保存先：**
+
+| 種別 | 保存先 |
+|---|---|
+| 取得した論文のMarkdown | `chapter6/storage/markdown/*.md`（arXiv IDがファイル名） |
+| アプリケーションログ | `chapter6/logs/application.log` |
+| 最終レポート | ブラウザ上のUIのみに表示（ファイルには保存されない） |
+
 ### 主要な機能
 
 #### arXiv論文リサーチャー
@@ -156,6 +164,8 @@ $ uv run python -m arxiv_researcher.agent.paper_analyzer_agent fixtures/2408.143
 
 実行すると、論文のタイトル、著者、要約が表示され、Introduction、Methodology、Results等の各セクションが要約されます。さらに、主要な発見事項と貢献が箇条書きで整理され、論文の強みと限界についての分析結果も出力されます。
 
+**結果の保存先：** ターミナルの標準出力のみ（ファイルには保存されない）
+
 #### 2. PaperSearchAgent（論文検索エージェント）の動作確認
 
 arXivからの論文検索機能を確認するためのテストです。このエージェントは検索クエリに基づいて関連論文を取得し、基本的なメタデータを抽出します。
@@ -164,7 +174,15 @@ arXivからの論文検索機能を確認するためのテストです。この
 $ uv run python -m arxiv_researcher.agent.paper_search_agent
 ```
 
-実行すると、デフォルトの検索クエリ（例：「LLM agent」）により論文が検索され、複数の論文情報が表示されます。各論文について、タイトル、著者、発表日、arXiv IDといった基本情報とともに、論文の要約（abstract）も確認できます。
+実行すると、デフォルトの検索クエリ（「LLMエージェントの評価方法」）により論文が検索され、実行ノードのトレース情報がターミナルに出力されます。
+
+**結果の保存先：**
+
+| 種別 | 保存先 |
+|---|---|
+| 取得した論文のMarkdown | `chapter6/storage/markdown/*.md`（arXiv IDがファイル名） |
+| アプリケーションログ | `chapter6/logs/application.log` |
+| グラフ実行のトレース | ターミナルの標準出力のみ（ファイルには保存されない） |
 
 ## 動作確認で使用している論文
 
