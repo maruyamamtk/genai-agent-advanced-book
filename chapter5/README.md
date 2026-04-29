@@ -317,8 +317,32 @@ uv run python scripts/11_generate_report.py \
 uv run python src/graph/programmer.py
 ```
 
+> **実行結果の保存先について**
+>
+> `src/graph/programmer.py` の実行結果はファイルには保存されず、ターミナルの標準出力のみに表示されます。
+>
+> | ノード | 出力内容 |
+> |---|---|
+> | `set_dataframe` | データ概要をターミナルに表示 |
+> | `generate_code` | 生成されたコードをターミナルに表示 |
+> | `execute_code` | 実行結果（stdout / stderr）をターミナルに表示 |
+> | `generate_review` | レビュー内容をターミナルに表示 |
+>
+> LLM が生成したコード内で `plt.savefig()` 等のファイル保存を行う場合がありますが、それは E2B Sandbox（クラウド上の隔離環境）内への保存であり、ローカルには残りません。
+>
+> ファイルに結果を保存したい場合は、以下の `src/graph/data_analysis.py` を実行してください。
+
 ### 5.5 データ分析レポートの作成
 
 ```bash
 uv run python src/graph/data_analysis.py
 ```
+
+> **実行結果の保存先について**
+>
+> `src/graph/data_analysis.py` の実行結果は `outputs/graph/` ディレクトリに保存されます。
+>
+> | ファイル | 内容 |
+> |---|---|
+> | `outputs/graph/report.md` | 分析レポート（Markdown形式） |
+> | `outputs/graph/*.png` | 分析で生成されたグラフ画像 |
