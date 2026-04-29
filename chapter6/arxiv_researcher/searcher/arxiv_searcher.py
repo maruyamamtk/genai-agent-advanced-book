@@ -237,6 +237,7 @@ class ArxivSearcher(Searcher):
                     categories=[tag.get("term", "") for tag in entry.get("tags", [])],
                 )
                 for entry in entries
+                if "/abs/" in entry.id  # arXivエラーエントリを除外
             ]
 
             if self.debug:
