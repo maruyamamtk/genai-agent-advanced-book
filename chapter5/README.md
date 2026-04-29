@@ -293,10 +293,13 @@ uv run python scripts/09_generate_plan.py
 uv run python scripts/10_execute_plan.py
 ```
 
+> **出力先:** `outputs/tmp/`
+>
+> コード内に `output_dir = "outputs/tmp"` とハードコードされており、サブタスク実行中に生成された中間ファイル（実行結果・グラフ画像など）が保存されます。
+
 ### 5.5.3 実行結果を反映したレポート生成
 
 最後に計画に対する分析結果を見やすくまとめたレポートを生成します。
-分析結果は `outputs/{process_id}/report.md` に保存されます。
 
 ```bash
 uv run python scripts/11_generate_report.py \
@@ -304,6 +307,15 @@ uv run python scripts/11_generate_report.py \
     --user_request "scoreを最大化するための広告キャンペーンを検討したい" \
     --process_id "sample"
 ```
+
+> **出力先:** `outputs/{process_id}/`
+>
+> `--process_id` 引数の値がフォルダ名になります（デフォルト: `sample` → `outputs/sample/`）。
+>
+> | ファイル | 内容 |
+> |---|---|
+> | `outputs/{process_id}/report.md` | 最終分析レポート（Markdown形式） |
+> | `outputs/{process_id}/*.png` | 分析で生成されたグラフ画像 |
 
 
 ## LangGraph による実行
